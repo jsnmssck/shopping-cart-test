@@ -9,14 +9,14 @@ class PriceServiceIT extends CatsEffectSuite {
   val instance: PriceService[IO] = PriceService.make[IO]
 
   test("get a price from valid endpoint") {
-    val result = instance.getPrice(ItemName("Cheerios"))
-    val out    = result.unsafeRunSync()
-    assert(out.isRight && out.exists(i => i.title.value == "Cheerios" && i.price.value > 0))
+    for {
+      item <- instance.getPrice(ItemName("Cheerios"))
+    } yield assert(item.isRight && item.exists(i => i.title.value == "Cheerios" && i.price.value > 0))
   }
 
   test("return error from invalid endpoint") {
-    val result = instance.getPrice(ItemName("Unknown"))
-    val out    = result.unsafeRunSync()
-    assert(out.isLeft)
+    for {
+      badItem <- instance.getPrice(ItemName("Unknown"))
+    } yield assert(badItem.isLeft)
   }
 }
