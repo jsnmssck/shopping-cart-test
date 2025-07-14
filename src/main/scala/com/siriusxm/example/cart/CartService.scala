@@ -39,8 +39,12 @@ object CartService {
     private val taxRate = m.pure(BigDecimal(0.125))
 
     override def addItem(cart: Cart, item: Item, qty: Int): F[Cart] = {
-      val updatedItem = cart.contents.get(item.title).fold(CartItem(item, Quantity(qty)))(_.add(qty))
-      m.pure(Cart(cart.contents.updated(item.title, updatedItem)))
+      if (qty > 0) {
+        val updatedItem = cart.contents.get(item.title).fold(CartItem(item, Quantity(qty)))(_.add(qty))
+        m.pure(Cart(cart.contents.updated(item.title, updatedItem)))
+      } else {
+        m.pure(cart)
+      }
     }
 
     override def itemSubtotal(cart: Cart): F[BigDecimal] = {

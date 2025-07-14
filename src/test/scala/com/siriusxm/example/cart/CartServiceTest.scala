@@ -18,9 +18,19 @@ class CartServiceTest extends CatsEffectSuite {
       contents = c3.contents
     } yield {
       assert(
-        contents.contains(ItemName("item1")) &&
-          contents.get(ItemName("item1")).exists(_.quantity.value == 5)
+        contents.get(ItemName("item1")).exists(_.quantity.value == 5)
       )
+    }
+  }
+
+  test("Do not add non-positive quantities to the cart") {
+    val cart = Cart()
+    val item = Item(ItemName("item1"), Price(BigDecimal(2.00)))
+    for {
+      c1 <- instance.addItem(cart, item, 2)
+      c2 <- instance.addItem(c1, item, -1)
+    } yield {
+      assert(c2.contents.get(ItemName("item1")).exists(_.quantity.value == 2))
     }
   }
 
