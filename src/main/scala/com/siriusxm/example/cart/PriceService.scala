@@ -1,8 +1,8 @@
 package com.siriusxm.example.cart
 
+import cats.MonadError
 import cats.effect._
 import cats.implicits.catsSyntaxApplicativeError
-import cats.{Applicative, Monad, MonadError}
 import com.siriusxm.example.cart.Items._
 import io.circe._
 import io.circe.jawn.decode
@@ -14,12 +14,12 @@ trait PriceService[F[_]] {
 
 object PriceService {
 
-  def make[F[_]: Monad: LiftIO](implicit
+  def make[F[_]](implicit
       mc: MonadCancel[F, Throwable]
   ): PriceService[F] = { (item: ItemName) =>
     {
       okHttpClientResource.use { client =>
-        implicitly[Monad[F]].pure {
+        mc.pure {
           val request = new okhttp3.Request.Builder()
             .url(
               s"https://raw.githubusercontent.com/mattjanks16/shopping-cart-test-data/main/${item.value.toLowerCase.replaceAll(" ", "")}.json"
@@ -33,22 +33,21 @@ object PriceService {
     }
   }
 
-  private def okHttpClientResource[F[_]: Applicative](implicit
-      me: MonadError[F, Throwable],
-      app: Applicative[F]
+  private def okHttpClientResource[F[_]](implicit
+      me: MonadError[F, Throwable]
   ): Resource[F, OkHttpClient] =
     Resource.make(
-      app.pure {
+      me.pure {
         new OkHttpClient.Builder()
           .build()
       }
     )(client =>
-      app
+      me
         .pure {
           client.dispatcher().executorService().shutdown()
           client.connectionPool().evictAll()
         }
-        .handleErrorWith(_ => app.unit)
+        .handleErrorWith(_ => me.unit)
     )
 
 }
